@@ -1,8 +1,10 @@
 import _ from 'lodash';
+import { CubeGenerator } from './utils/cube-generator.js'
+
 
 var THREE = require('three');
 
-var scene, camera, renderer, cubeA, cubeB, group;
+var scene, camera, renderer, cubeA, cubeB, cubeC, group;
 
 function init(){
     scene = new THREE.Scene();
@@ -12,16 +14,12 @@ function init(){
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
 
-    var geometry = new THREE.BoxGeometry(2, 1, 2);
-    var material = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
-    cubeA = new THREE.Mesh( geometry, material );
-    cubeB = new THREE.Mesh( geometry, material );
-    cubeB.position.set(-3, 0, 0)
-    group = new THREE.Group()
-    group.add( cubeA )
-    group.add( cubeB )
 
-    scene.add( group );
+    // var material = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
+
+
+    console.log(new CubeGenerator(3), typeof(new CubeGenerator(3)))
+    // scene.add( new CubeGenerator(3) );
 
 
     // controls
@@ -44,8 +42,8 @@ function animate() {
 	requestAnimationFrame( animate );
     renderer.render( scene, camera );
     
-    group.rotation.x += 0.01;
-    group.rotation.y += 0.01;
+    // group.rotation.x += 0.01;
+    // group.rotation.y += 0.01;
 }
 
 function onResize(){
@@ -56,4 +54,4 @@ function onResize(){
 }
 
 init();
-animate();
+// animate();

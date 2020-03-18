@@ -1,1 +1,1 @@
-console.log("typescript indeeex")
+console.log("typescript indeeexx")

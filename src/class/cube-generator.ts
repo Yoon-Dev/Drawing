@@ -1,43 +1,42 @@
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial } from "three"
+import { BoxBufferGeometry, Group, Mesh, MeshBasicMaterial, ShaderMaterial, TextureLoader, RepeatWrapping } from "three"
 
 class CubeGenerator{
 // §§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
 // **********************************************
     public basecube: Mesh;
-    public boxgeometry: BoxGeometry
-    private sculpture: Group;
-
+    public boxgeometry: BoxBufferGeometry
+    private multicube: Group;
+// °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
     constructor(a: number){
         this.basecube = this.createCube(a, true)
-        this.sculpture = this.createSculpture(this.basecube, this.boxgeometry)
     }
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
 // create a cube
     createCube(a: number, first: boolean = false): Mesh{
 
-        let geometry: BoxGeometry;
-        let material = new MeshBasicMaterial( { color: 0x00ffff } );
+        let geometry: BoxBufferGeometry;
+        
         let b: number = ((1 + Math.sqrt(5)) / 2) * a
-        if(Math.round(Math.random()) === 1){
-            geometry = new BoxGeometry(a, b, a)
+        if(Math.round(Math.random()) === 1 || first){
+            geometry = new BoxBufferGeometry(a, b, a)
             
         }else{
-            geometry = new BoxGeometry(b, a, b)
+            geometry = new BoxBufferGeometry(b, a, b)
         }
 
         if(first){
             this.boxgeometry = geometry
         }
 
-        let basecube: Mesh = new Mesh( geometry, material );
+        let basecube: Mesh = new Mesh( geometry, this.createTexture() );
         return basecube;
 
     }
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
 // create the sculture (group)
-    createSculpture(basecube: Mesh, boxgeometry: BoxGeometry): Group{
+    createMultiCube(basecube: Mesh, boxgeometry: BoxBufferGeometry){
         // to get a contact between each cube
         let limite = {
             xlimite: boxgeometry.parameters.width,
@@ -61,14 +60,76 @@ class CubeGenerator{
                 group.add(newcube)
             }
         }
+        this.multicube = group
+    }
 
-        return group;
+
+// create shader material
+    createTexture(): ShaderMaterial{
+
+        // let material = new MeshBasicMaterial( { color: 0x000000 } );
+        let uniforms = {
+            "time": { value: 1.0 },
+            "colorTexture": { value: new TextureLoader().load( './textures/texture-bois.jpg' ) }
+        }
+        uniforms[ "colorTexture" ].value.wrapS = uniforms[ "colorTexture" ].value.wrapT = RepeatWrapping;
+        
+        let material: ShaderMaterial = new ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader:
+            `
+            varying vec2 vUv;
+
+            void main()
+            {
+                vUv = uv;
+                vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+                gl_Position = projectionMatrix * mvPosition;
+            }  
+
+            `,
+
+            fragmentShader: 
+            `
+            uniform float time;
+
+			uniform sampler2D colorTexture;
+
+			varying vec2 vUv;
+
+			void main( void ) {
+
+				vec2 position = - 1.0 + 2.0 * vUv;
+
+				float a = atan( position.y, position.x );
+				float r = sqrt( dot( position, position ) );
+
+				vec2 uv;
+				uv.x = cos( a ) / r;
+				uv.y = sin( a ) / r;
+				uv /= 10.0;
+				uv += time * 0.05;
+
+				vec3 color = texture2D( colorTexture, uv ).rgb;
+
+				gl_FragColor = vec4( color * r * 1.5, 1.0 );
+
+			}`
+
+        
+        })
+    
+        return material
     }
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
 // °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
 // get the sculture propertie
-    getSculpture(): Group{
-        return this.sculpture
+    getMultiCube(): Group{
+        return this.multicube
+    }
+// get the sculture propertie
+    getCube(): Mesh{
+        return this.basecube
     }
 // ----------------------------------------------
 // end
